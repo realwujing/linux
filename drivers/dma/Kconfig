@@ -619,6 +619,13 @@ config ZX_DMA
 	help
 	  Support the DMA engine for ZTE ZX family platform devices.
 
+config PHYTIUM_PCI_DMAC
+	bool "Phytium X100 PCI DMA support"
+	depends on OF || COMPILE_TEST
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+	help
+	  Enable support for Phytium X100 DMA controller
 
 # driver files
 source "drivers/dma/bestcomm/Kconfig"
