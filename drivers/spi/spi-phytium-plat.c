@@ -176,6 +176,7 @@ static const struct of_device_id phytium_spi_of_match[] = {
 MODULE_DEVICE_TABLE(of, phytium_spi_of_match);
 
 static const struct acpi_device_id phytium_spi_acpi_match[] = {
+	{"PHTY000E", 0},
 	{"PHYT000E", 0},
 	{}
 };
