@@ -88,9 +88,10 @@ set_debarch() {
 version=$KERNELRELEASE
 if [ -n "$KDEB_PKGVERSION" ]; then
 	packageversion=$KDEB_PKGVERSION
+	revision=${packageversion##*-}
 else
 	revision=$(cat .version 2>/dev/null||echo 1)
-	packageversion=$version-$revision
+	packageversion=$KERNELVERSION-$revision
 fi
 sourcename=$KDEB_SOURCENAME
 packagename=linux-image-$version
@@ -139,6 +140,7 @@ cat <<EOF > debian/changelog
 $sourcename ($packageversion) $distribution; urgency=low
 
   * Custom built Linux kernel.
+  * Git:$(git symbolic-ref --short HEAD) $(git rev-parse --short HEAD)
 
  -- $maintainer  $(date -R)
 EOF
@@ -205,10 +207,12 @@ cat <<EOF > debian/rules
 #!$(command -v $MAKE) -f
 
 build:
-	\$(MAKE) KERNELRELEASE=${version} ARCH=${ARCH} KBUILD_SRC=
+	\$(MAKE) KERNELRELEASE=${version} ARCH=${ARCH} \
+	KBUILD_BUILD_VERSION=${revision} KBUILD_SRC=
 
 binary-arch:
-	\$(MAKE) KERNELRELEASE=${version} ARCH=${ARCH} KBUILD_SRC= intdeb-pkg
+	\$(MAKE) KERNELRELEASE=${version} ARCH=${ARCH} \
+	KBUILD_BUILD_VERSION=${revision} KBUILD_SRC= intdeb-pkg
 
 clean:
 	rm -rf debian/*tmp debian/files
