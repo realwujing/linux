@@ -5,48 +5,41 @@
 #include <linux/compiler.h>
 #include <linux/types.h>
 
-/* Built-in __init functions needn't be compiled with retpoline */
+/* 内置 __init 函数不需要与 retpoline 一起编译 */
 #if defined(__noretpoline) && !defined(MODULE)
 #define __noinitretpoline __noretpoline
 #else
 #define __noinitretpoline
 #endif
 
-/* These macros are used to mark some functions or 
- * initialized data (doesn't apply to uninitialized data)
- * as `initialization' functions. The kernel can take this
- * as hint that the function is used only during the initialization
- * phase and free up used memory resources after
+/* 这些宏用于标记某些函数或已初始化的数据（不适用于未初始化的数据）
+ * 为“初始化”函数。内核可以将其视为提示，表明该函数仅在初始化阶段使用，
+ * 并在使用后释放已使用的内存资源
  *
- * Usage:
- * For functions:
- * 
- * You should add __init immediately before the function name, like:
+ * 用法：
+ * 对于函数：
+ *
+ * 应在函数名之前立即添加 __init，例如：
  *
  * static void __init initme(int x, int y)
  * {
  *    extern int z; z = x * y;
  * }
  *
- * If the function has a prototype somewhere, you can also add
- * __init between closing brace of the prototype and semicolon:
+ * 如果函数在某处有原型，也可以在原型的右括号和分号之间添加 __init：
  *
  * extern int initialize_foobar_device(int, int, int) __init;
  *
- * For initialized data:
- * You should insert __initdata or __initconst between the variable name
- * and equal sign followed by value, e.g.:
+ * 对于已初始化的数据：
+ * 应在变量名和等号之间插入 __initdata 或 __initconst，后跟值，例如：
  *
  * static int init_variable __initdata = 0;
  * static const char linux_logo[] __initconst = { 0x32, 0x36, ... };
  *
- * Don't forget to initialize data not at file scope, i.e. within a function,
- * as gcc otherwise puts the data into the bss section and not into the init
- * section.
+ * 不要忘记初始化不在文件作用域内的数据，也就是在函数内，否则 gcc 将数据放入 bss 部分而不是 init 部分。
  */
 
-/* These are for everybody (although not all archs will actually
-   discard it in modules) */
+/* 这些适用于所有人（尽管并非所有架构都会在模块中丢弃它） */
 #define __init		__section(.init.text) __cold  __latent_entropy __noinitretpoline
 #define __initdata	__section(.init.data)
 #define __initconst	__section(.init.rodata)
@@ -54,21 +47,16 @@
 #define __exit_call	__used __section(.exitcall.exit)
 
 /*
- * modpost check for section mismatches during the kernel build.
- * A section mismatch happens when there are references from a
- * code or data section to an init section (both code or data).
- * The init sections are (for most archs) discarded by the kernel
- * when early init has completed so all such references are potential bugs.
- * For exit sections the same issue exists.
+ * modpost 检查内核构建过程中的段不匹配。
+ * 当代码或数据段存在从初始化段（代码或数据）到引用时就会发生段不匹配。
+ * 大多数架构中，当早期初始化完成后，内核会丢弃初始化段，因此所有此类引用都可能是错误。
+ * 对于退出段，也存在相同的问题。
  *
- * The following markers are used for the cases where the reference to
- * the *init / *exit section (code or data) is valid and will teach
- * modpost not to issue a warning.  Intended semantics is that a code or
- * data tagged __ref* can reference code or data from init section without
- * producing a warning (of course, no warning does not mean code is
- * correct, so optimally document why the __ref is needed and why it's OK).
+ * 以下标记用于以下情况：引用到 *init / *exit 段（代码或数据）是有效的，并将教导
+ * modpost 不发出警告。预期的语义是，标记为 __ref* 的代码或数据可以引用初始化段的代码或数据，而不会产生警告
+ * （当然，没有警告并不意味着代码是正确的，所以最好记录为什么需要 __ref，以及为什么它是可以的）。
  *
- * The markers follow same syntax rules as __init / __initdata.
+ * 这些标记遵循与 __init / __initdata 相同的语法规则。
  */
 #define __ref            __section(.ref.text) noinline
 #define __refdata        __section(.ref.data)
@@ -82,7 +70,7 @@
 
 #define __exit          __section(.exit.text) __exitused __cold notrace
 
-/* Used for MEMORY_HOTPLUG */
+/* 用于 MEMORY_HOTPLUG */
 #define __meminit        __section(.meminit.text) __cold notrace \
 						  __latent_entropy
 #define __meminitdata    __section(.meminit.data)
@@ -91,7 +79,7 @@
 #define __memexitdata    __section(.memexit.data)
 #define __memexitconst   __section(.memexit.rodata)
 
-/* For assembly routines */
+/* 用于汇编例程 */
 #define __HEAD		.section	".head.text","ax"
 #define __INIT		.section	".init.text","ax"
 #define __FINIT		.previous
@@ -104,83 +92,75 @@
 #define __MEMINITDATA    .section	".meminit.data", "aw"
 #define __MEMINITRODATA  .section	".meminit.rodata", "a"
 
-/* silence warnings when references are OK */
+/* 引用正确时取消警告 */
 #define __REF            .section       ".ref.text", "ax"
 #define __REFDATA        .section       ".ref.data", "aw"
 #define __REFCONST       .section       ".ref.rodata", "a"
 
 #ifndef __ASSEMBLY__
 /*
- * Used for initialization calls..
+ * 用于初始化调用..
  */
-typedef int (*initcall_t)(void);
-typedef void (*exitcall_t)(void);
+typedef int (*initcall_t)(void);  // 定义初始化调用函数指针类型
+typedef void (*exitcall_t)(void);  // 定义退出调用函数指针类型
 
 #ifdef CONFIG_HAVE_ARCH_PREL32_RELOCATIONS
-typedef int initcall_entry_t;
-
+typedef int initcall_entry_t;  // 初始化调用条目类型，当具有特定宏时使用
 static inline initcall_t initcall_from_entry(initcall_entry_t *entry)
 {
-	return offset_to_ptr(entry);
+	return offset_to_ptr(entry);  // 从初始化调用条目获取初始化调用函数指针
 }
 #else
-typedef initcall_t initcall_entry_t;
-
+typedef initcall_t initcall_entry_t;  // 初始化调用条目类型，当没有特定宏时使用
 static inline initcall_t initcall_from_entry(initcall_entry_t *entry)
 {
-	return *entry;
+	return *entry;  // 直接获取初始化调用函数指针
 }
 #endif
 
-extern initcall_entry_t __con_initcall_start[], __con_initcall_end[];
-extern initcall_entry_t __security_initcall_start[], __security_initcall_end[];
+extern initcall_entry_t __con_initcall_start[], __con_initcall_end[];  // 构造器初始化调用条目的开始和结束
+extern initcall_entry_t __security_initcall_start[], __security_initcall_end[];  // 安全性初始化调用条目的开始和结束
 
-/* Used for contructor calls. */
-typedef void (*ctor_fn_t)(void);
+/* 用于构造器调用 */
+typedef void (*ctor_fn_t)(void);  // 构造器函数指针类型
 
-/* Defined in init/main.c */
-extern int do_one_initcall(initcall_t fn);
-extern char __initdata boot_command_line[];
-extern char *saved_command_line;
-extern unsigned int reset_devices;
+/* 在 init/main.c 中定义 */
+extern int do_one_initcall(initcall_t fn);  // 执行单个初始化调用
+extern char __initdata boot_command_line[];  // 引导命令行数据
+extern char *saved_command_line;  // 保存的命令行字符串
+extern unsigned int reset_devices;  // 重置设备标志
 
-/* used by init/main.c */
-void setup_arch(char **);
-void prepare_namespace(void);
-void __init load_default_modules(void);
-int __init init_rootfs(void);
+/* 由 init/main.c 使用 */
+void setup_arch(char **);  // 设置体系结构
+void prepare_namespace(void);  // 准备命名空间
+void __init load_default_modules(void);  // 加载默认模块
+int __init init_rootfs(void);  // 初始化根文件系统
 
 #if defined(CONFIG_STRICT_KERNEL_RWX) || defined(CONFIG_STRICT_MODULE_RWX)
-extern bool rodata_enabled;
+extern bool rodata_enabled;  // 只读数据段是否已启用
 #endif
 #ifdef CONFIG_STRICT_KERNEL_RWX
-void mark_rodata_ro(void);
+void mark_rodata_ro(void);  // 标记只读数据段为只读
 #endif
 
-extern void (*late_time_init)(void);
+extern void (*late_time_init)(void);  // 晚期时间初始化函数指针
 
-extern bool initcall_debug;
+extern bool initcall_debug;  // 初始化调用调试标志
 
-#endif
-  
-#ifndef MODULE
+#endif  // MODULE
 
 #ifndef __ASSEMBLY__
 
 /*
- * initcalls are now grouped by functionality into separate
- * subsections. Ordering inside the subsections is determined
- * by link order. 
- * For backwards compatibility, initcall() puts the call in 
- * the device init subsection.
+ * 初始化调用现在按功能分组到不同的子段中。
+ * 子段内的排序由链接顺序决定。
+ * 为了向后兼容，initcall() 将调用放入设备初始化子段中。
  *
- * The `id' arg to __define_initcall() is needed so that multiple initcalls
- * can point at the same handler without causing duplicate-symbol build errors.
+ * __define_initcall() 中的 `id' 参数用于使多个 initcalls 可以指向同一个处理程序，
+ * 而不会导致重复符号构建错误。
  *
- * Initcalls are run by placing pointers in initcall sections that the
- * kernel iterates at runtime. The linker can do dead code / data elimination
- * and remove that completely, so the initcall sections have to be marked
- * as KEEP() in the linker script.
+ * 初始化调用通过在运行时将指针放置在初始化调用段中来运行。
+ * 链接器可以进行死代码/数据消除并将其完全删除，因此初始化调用段必须在链接器脚本中标记为 KEEP()。
  */
 
 #ifdef CONFIG_HAVE_ARCH_PREL32_RELOCATIONS
@@ -199,18 +179,17 @@ extern bool initcall_debug;
 #define __define_initcall(fn, id) ___define_initcall(fn, id, .initcall##id)
 
 /*
- * Early initcalls run before initializing SMP.
+ * 早期初始化调用在初始化 SMP 之前运行。
  *
- * Only for built-in code, not modules.
+ * 仅适用于内建代码，不适用于模块。
  */
 #define early_initcall(fn)		__define_initcall(fn, early)
 
 /*
- * A "pure" initcall has no dependencies on anything else, and purely
- * initializes variables that couldn't be statically initialized.
+ * "pure" initcall 没有依赖于其他任何内容，纯粹初始化了静态初始化不可能完成的变量。
  *
- * This only exists for built-in code, not for modules.
- * Keep main.c:initcall_level_names[] in sync.
+ * 这仅适用于内建代码，不适用于模块。
+ * 保持 main.c:initcall_level_names[] 同步。
  */
 #define pure_initcall(fn)		__define_initcall(fn, 0)
 
@@ -245,10 +224,9 @@ struct obs_kernel_param {
 };
 
 /*
- * Only for really core code.  See moduleparam.h for the normal way.
+ * 仅适用于真正核心代码。查看 moduleparam.h 以获取正常方式。
  *
- * Force the alignment so the compiler doesn't space elements of the
- * obs_kernel_param "array" too far apart in .init.setup.
+ * 强制对齐以防止编译器在 .init.setup 中过多地分隔 obs_kernel_param "array" 的元素。
  */
 #define __setup_param(str, unique_id, fn, early)			\
 	static const char __setup_str_##unique_id[] __initconst		\
@@ -262,9 +240,9 @@ struct obs_kernel_param {
 	__setup_param(str, fn, fn, 0)
 
 /*
- * NOTE: fn is as per module_param, not __setup!
- * Emits warning if fn returns non-zero.
- */
+*注意：fn 是根据 module_param，而不是 __setup！
+*如果 fn 返回非零，则发出警告。
+*/
 #define early_param(str, fn)						\
 	__setup_param(str, fn, fn, 1)
 
@@ -286,7 +264,7 @@ struct obs_kernel_param {
 	}								\
 	__setup_param(str_off, parse_##var##_off, parse_##var##_off, 1)
 
-/* Relies on boot_command_line being set */
+/*依赖于 boot_command_line 的设置*/
 void __init parse_early_param(void);
 void __init parse_early_options(char *cmdline);
 #endif /* __ASSEMBLY__ */
@@ -297,7 +275,7 @@ void __init parse_early_options(char *cmdline);
 #define __setup(str, func) 			/* nothing */
 #endif
 
-/* Data marked not to be saved by software suspend */
+/*标记为不被软件挂起保存的数据 */
 #define __nosavedata __section(.data..nosave)
 
 #ifdef MODULE
