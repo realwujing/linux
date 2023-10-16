@@ -399,17 +399,18 @@ static noinline void __ref rest_init(void)
 	struct task_struct *tsk;
 	int pid;
 
-	rcu_scheduler_starting();
+	rcu_scheduler_starting();  // 启动 RCU 调度器
+
 	/*
-	 * We need to spawn init first so that it obtains pid 1, however
-	 * the init task will end up wanting to create kthreads, which, if
-	 * we schedule it before we create kthreadd, will OOPS.
+	 * 我们需要首先生成 init 进程，以便它获得 PID 1，但是
+	 * init 任务最终会想要创建内核线程，如果在创建 kthreadd 之前
+	 * 调度它，将导致 OOPS。
 	 */
 	pid = kernel_thread(kernel_init, NULL, CLONE_FS);
+
 	/*
-	 * Pin init on the boot CPU. Task migration is not properly working
-	 * until sched_init_smp() has been run. It will set the allowed
-	 * CPUs for init to the non isolated CPUs.
+	 * 在引导 CPU 上钉住 init 进程。在运行 sched_init_smp() 之前，
+	 * 任务迁移尚未正常工作。它将为 init 设置非隔离 CPU 的允许 CPU。
 	 */
 	rcu_read_lock();
 	tsk = find_task_by_pid_ns(pid, &init_pid_ns);
@@ -417,28 +418,28 @@ static noinline void __ref rest_init(void)
 	rcu_read_unlock();
 
 	numa_default_policy();
+
 	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
 	rcu_read_lock();
 	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
 	rcu_read_unlock();
 
 	/*
-	 * Enable might_sleep() and smp_processor_id() checks.
-	 * They cannot be enabled earlier because with CONFIG_PREEMPT=y
-	 * kernel_thread() would trigger might_sleep() splats. With
-	 * CONFIG_PREEMPT_VOLUNTARY=y the init task might have scheduled
-	 * already, but it's stuck on the kthreadd_done completion.
+	 * 启用 might_sleep() 和 smp_processor_id() 检查。
+	 * 它们不能在更早启用，因为对于 CONFIG_PREEMPT=y，
+	 * kernel_thread() 将触发 might_sleep() 的 splat。对于
+	 * CONFIG_PREEMPT_VOLUNTARY=y，init 任务可能已经调度，
+	 * 但它卡在 kthreadd_done 完成上。
 	 */
 	system_state = SYSTEM_SCHEDULING;
 
 	complete(&kthreadd_done);
 
 	/*
-	 * The boot idle thread must execute schedule()
-	 * at least once to get things moving:
+	 * 引导空闲线程必须至少执行一次 schedule() 以启动进程：
 	 */
 	schedule_preempt_disabled();
-	/* Call into cpu_idle with preempt disabled */
+	/* 在禁用抢占的情况下调用 cpu_idle */
 	cpu_startup_entry(CPUHP_ONLINE);
 }
 
