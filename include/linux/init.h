@@ -176,12 +176,26 @@ extern bool initcall_debug;  // 初始化调用调试标志
 		__attribute__((__section__(#__sec ".init"))) = fn;
 #endif
 
+/**
+ * 模块初始化按照__define_initcall 定义的顺序执行
+ * 首先执行 early_initcall 初始化模块， 
+ * 之后是 pure_initcall 模块、 core_initcall 模块等， 
+ * 最后执行 late_initcall_sync。 
+ * 如果 Linux 设备驱动程序采用 built⁃in㊀的方式而不是作为 Module 形式加载时，
+ * 将使用 device_initcall 函数或者 device_initcall_sync 函数进行加载。
+ * 在 Linux 系统初始化时运行的模块需要使用以上的 xxx_initcall 宏， 定义该模块的函数指针，
+ * 之后该模块的函数指针将加入到 Linux 内核的__early_initcall_end 和__initcall_end 之间。
+ */
 #define __define_initcall(fn, id) ___define_initcall(fn, id, .initcall##id)
 
 /*
  * 早期初始化调用在初始化 SMP 之前运行。
  *
  * 仅适用于内建代码，不适用于模块。
+ * early_initcall 宏用于定义初始化函数并将其添加到 early 阶段。在内核初始化期间，
+ * early 阶段是在初始化的早期阶段执行的，通常用于执行一些需要尽早完成的初始化任务，
+ * 如处理一些核心数据结构的初始化、内存管理等。这些初始化函数在早期执行，
+ * 因此它们没有依赖于其他初始化函数或子系统，以确保内核的核心功能得到正确初始化。
  */
 #define early_initcall(fn)		__define_initcall(fn, early)
 
@@ -190,31 +204,53 @@ extern bool initcall_debug;  // 初始化调用调试标志
  *
  * 这仅适用于内建代码，不适用于模块。
  * 保持 main.c:initcall_level_names[] 同步。
+ * 用于执行那些没有依赖其他任何初始化函数或子系统的初始化任务，
+ * 通常，这些初始化函数用于执行一些需要在尽可能早的初始化阶段完成的操作，以确保内核能够正常启动。
  */
 #define pure_initcall(fn)		__define_initcall(fn, 0)
 
-#define core_initcall(fn)		__define_initcall(fn, 1)
+/**
+ * xx_initcall 强调初始化函数的同步执行
+ * xx_initcall_sync 强制按顺序同步执行初始化函数
+ */
+#define core_initcall(fn)		__define_initcall(fn, 1)	// 通常用于执行与核心功能相关的初始化任务
 #define core_initcall_sync(fn)		__define_initcall(fn, 1s)
-#define postcore_initcall(fn)		__define_initcall(fn, 2)
+#define postcore_initcall(fn)		__define_initcall(fn, 2) // 在内核初始化期间，postcore 阶段位于 core 阶段之后，用于执行一些与核心功能相关的初始化任务。这些初始化函数在 core 阶段之后执行，因此可以依赖于 core 阶段执行的初始化函数
 #define postcore_initcall_sync(fn)	__define_initcall(fn, 2s)
-#define arch_initcall(fn)		__define_initcall(fn, 3)
+#define arch_initcall(fn)		__define_initcall(fn, 3)	// arch 阶段用于执行与体系结构相关的初始化任务，包括特定架构的初始化代码
 #define arch_initcall_sync(fn)		__define_initcall(fn, 3s)
-#define subsys_initcall(fn)		__define_initcall(fn, 4)
+#define subsys_initcall(fn)		__define_initcall(fn, 4)	// subsys 阶段用于执行与子系统相关的初始化任务
 #define subsys_initcall_sync(fn)	__define_initcall(fn, 4s)
-#define fs_initcall(fn)			__define_initcall(fn, 5)
+#define fs_initcall(fn)			__define_initcall(fn, 5)	// 通常包括与文件系统相关的初始化工作
 #define fs_initcall_sync(fn)		__define_initcall(fn, 5s)
-#define rootfs_initcall(fn)		__define_initcall(fn, rootfs)
-#define device_initcall(fn)		__define_initcall(fn, 6)
+#define rootfs_initcall(fn)		__define_initcall(fn, rootfs)	// 通常用于执行与根文件系统初始化相关的任务，例如初始化文件系统、挂载根文件系统等
+#define device_initcall(fn)		__define_initcall(fn, 6)	// 这通常用于设备子系统的初始化，包括设备驱动程序的注册和设备的初始化
 #define device_initcall_sync(fn)	__define_initcall(fn, 6s)
-#define late_initcall(fn)		__define_initcall(fn, 7)
+#define late_initcall(fn)		__define_initcall(fn, 7)	// 通常，这些函数执行一些后期初始化工作，例如完成特定子系统的设置或其他任务
 #define late_initcall_sync(fn)		__define_initcall(fn, 7s)
 
+/**
+ * __initcall(fn) 宏是用来定义初始化函数并将其添加到 device_initcall 阶段的宏。
+ * 这意味着初始化函数将在设备初始化阶段被执行。通常，设备初始化是内核初始化的一个关键部分，它涵盖了设备驱动程序的加载和初始化等任务。
+ */
 #define __initcall(fn) device_initcall(fn)
 
+// 退出函数通常用于在模块卸载或内核关闭时执行一些清理工作
 #define __exitcall(fn)						\
 	static exitcall_t __exitcall_##fn __exit_call = fn
 
+/**
+ * 通常用于与控制台相关的初始化工作
+ * 控制台初始化函数通常用于设置和初始化内核的控制台设备，如串口终端、图形终端等。
+ * 这些初始化函数在内核启动时或模块加载时执行，以确保控制台设备准备就绪，以便进行后续的内核启动和用户交互。
+ */
 #define console_initcall(fn)	___define_initcall(fn,, .con_initcall)
+
+/**
+ * 该函数在安全子系统初始化阶段执行。这是一种特殊的初始化函数，通常用于与内核安全性相关的初始化工作
+ * 安全性初始化函数通常用于设置和初始化内核的安全特性、策略或模块，以确保内核在安全方面的功能和特性被正确配置和启用。
+ * 这些初始化函数在内核启动时或模块加载时执行，以确保安全子系统准备就绪，以便进行后续的内核操作和保护。
+ */
 #define security_initcall(fn)	___define_initcall(fn,, .security_initcall)
 
 struct obs_kernel_param {
