@@ -923,7 +923,7 @@ static void __init do_initcalls(void)
 	int level;
 
 	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
-		do_initcall_level(level);
+		do_initcall_level(level);  // 执行特定级别的初始化函数
 }
 
 /*
