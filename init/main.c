@@ -890,16 +890,16 @@ static initcall_entry_t *initcall_levels[] __initdata = {
 	__initcall_end,
 };
 
-/* Keep these in sync with initcalls in include/linux/init.h */
+/* 与 include/linux/init.h 中的 initcalls 保持同步 */
 static char *initcall_level_names[] __initdata = {
-	"pure",
-	"core",
-	"postcore",
-	"arch",
-	"subsys",
-	"fs",
-	"device",
-	"late",
+	"pure",      // 纯粹的初始化
+	"core",      // 核心初始化
+	"postcore",  // 核心初始化后
+	"arch",      // 架构相关初始化
+	"subsys",    // 子系统初始化
+	"fs",        // 文件系统初始化
+	"device",    // 设备初始化
+	"late",      // 晚期初始化
 };
 
 static void __init do_initcall_level(int level)
