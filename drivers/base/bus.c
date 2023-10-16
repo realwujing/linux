@@ -1227,15 +1227,24 @@ int subsys_virtual_register(struct bus_type *subsys,
 }
 EXPORT_SYMBOL_GPL(subsys_virtual_register);
 
+/**
+ * buses_init - 初始化总线子系统。
+ *
+ * 初始化总线子系统，包括创建总线相关的 sysfs 目录和数据结构。
+ *
+ * 返回：0 表示初始化成功，-ENOMEM 表示内存不足。
+ */
 int __init buses_init(void)
 {
-	bus_kset = kset_create_and_add("bus", &bus_uevent_ops, NULL);
-	if (!bus_kset)
-		return -ENOMEM;
+    // 创建总线子系统的 kset
+    bus_kset = kset_create_and_add("bus", &bus_uevent_ops, NULL);
+    if (!bus_kset)
+        return -ENOMEM;
 
-	system_kset = kset_create_and_add("system", NULL, &devices_kset->kobj);
-	if (!system_kset)
-		return -ENOMEM;
+    // 创建 "system" 目录，用于系统设备
+    system_kset = kset_create_and_add("system", NULL, &devices_kset->kobj);
+    if (!system_kset)
+        return -ENOMEM;
 
-	return 0;
+    return 0;
 }
