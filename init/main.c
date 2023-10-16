@@ -1083,65 +1083,65 @@ static int __ref kernel_init(void *unused)
 static noinline void __init kernel_init_freeable(void)
 {
 	/*
-	 * Wait until kthreadd is all set-up.
+	 * 等待直到 kthreadd 完全设置好。
 	 */
-	wait_for_completion(&kthreadd_done);
+	wait_for_completion(&kthreadd_done);  // 等待 kthreadd 完成初始化
 
-	/* Now the scheduler is fully set up and can do blocking allocations */
-	gfp_allowed_mask = __GFP_BITS_MASK;
+	/* 现在调度程序完全设置好，可以执行阻塞分配 */
+	gfp_allowed_mask = __GFP_BITS_MASK;  // 允许所有 GFP 标志位
 
 	/*
-	 * init can allocate pages on any node
+	 * init 进程可以在任何节点上分配页面
 	 */
-	set_mems_allowed(node_states[N_MEMORY]);
+	set_mems_allowed(node_states[N_MEMORY]);  // 设置允许 init 进程在所有节点上分配内存
 
-	cad_pid = task_pid(current);
+	cad_pid = task_pid(current);  // 获取当前任务（init 进程）的 PID
 
-	smp_prepare_cpus(setup_max_cpus);
+	smp_prepare_cpus(setup_max_cpus);  // 准备多核 CPU 的配置
 
-	workqueue_init();
+	workqueue_init();  // 初始化工作队列
 
-	init_mm_internals();
+	init_mm_internals();  // 初始化 init 进程的 mm 结构
 
-	do_pre_smp_initcalls();
-	lockup_detector_init();
+	do_pre_smp_initcalls();  // 执行 SMP 模式下的预初始化调用
 
-	smp_init();
-	sched_init_smp();
+	lockup_detector_init();  // 初始化锁死检测器
 
-	page_alloc_init_late();
+	smp_init();  // 初始化 SMP 相关功能
 
-	do_basic_setup();
+	sched_init_smp();  // 初始化 SMP 模式下的调度器
 
-	/* Open the /dev/console on the rootfs, this should never fail */
+	page_alloc_init_late();  // 初始化页面分配（稍后）
+
+	do_basic_setup();  // 执行基本的系统初始化
+
+	/* 打开 /dev/console，这应该永远不会失败 */
 	if (ksys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
-		pr_err("Warning: unable to open an initial console.\n");
+		pr_err("Warning: unable to open an initial console.\n");  // 打开控制台设备，如果失败，发出警告
 
-	(void) ksys_dup(0);
-	(void) ksys_dup(0);
+	(void) ksys_dup(0);  // 复制标准输入描述符
+	(void) ksys_dup(0);  // 再次复制标准输入描述符
 	/*
-	 * check if there is an early userspace init.  If yes, let it do all
-	 * the work
+	 * 检查是否有早期的用户空间初始化。如果有，让它完成所有工作
 	 */
 
 	if (!ramdisk_execute_command)
-		ramdisk_execute_command = "/init";
+		ramdisk_execute_command = "/init";  // 如果没有指定初始化命令，使用默认的 "/init"
 
 	if (ksys_access((const char __user *)
 			ramdisk_execute_command, 0) != 0) {
-		ramdisk_execute_command = NULL;
-		prepare_namespace();
+		ramdisk_execute_command = NULL;  // 如果指定的初始化命令不可访问，清除它
+		prepare_namespace();  // 准备命名空间
 	}
 
 	/*
-	 * Ok, we have completed the initial bootup, and
-	 * we're essentially up and running. Get rid of the
-	 * initmem segments and start the user-mode stuff..
+	 * 好的，我们已经完成了初始引导过程，基本上已经启动并运行。
+	 * 现在，去掉 initmem 段，并启动用户模式的进程。
 	 *
-	 * rootfs is available now, try loading the public keys
-	 * and default modules
+	 * rootfs 现在可用，尝试加载公钥和默认模块
 	 */
 
-	integrity_load_keys();
-	load_default_modules();
+	integrity_load_keys();  // 加载完整性验证的公钥
+
+	load_default_modules();  // 加载默认内核模块
 }
