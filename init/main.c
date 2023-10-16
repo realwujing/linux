@@ -839,31 +839,39 @@ static inline void do_trace_initcall_finish(initcall_t fn, int ret)
 
 int __init_or_module do_one_initcall(initcall_t fn)
 {
-	int count = preempt_count();
-	char msgbuf[64];
-	int ret;
+    int count = preempt_count();
+    char msgbuf[64];
+    int ret;
 
-	if (initcall_blacklisted(fn))
-		return -EPERM;
+    // 如果initcall被列入黑名单，直接返回错误
+    if (initcall_blacklisted(fn))
+        return -EPERM;
 
-	do_trace_initcall_start(fn);
-	ret = fn();
-	do_trace_initcall_finish(fn, ret);
+    // 追踪initcall的开始
+    do_trace_initcall_start(fn);
+    // 调用initcall函数
+    ret = fn();
+    // 追踪initcall的完成
+    do_trace_initcall_finish(fn, ret);
 
-	msgbuf[0] = 0;
+    msgbuf[0] = 0;
 
-	if (preempt_count() != count) {
-		sprintf(msgbuf, "preemption imbalance ");
-		preempt_count_set(count);
-	}
-	if (irqs_disabled()) {
-		strlcat(msgbuf, "disabled interrupts ", sizeof(msgbuf));
-		local_irq_enable();
-	}
-	WARN(msgbuf[0], "initcall %pF returned with %s\n", fn, msgbuf);
+    // 检查是否存在抢占不平衡的情况
+    if (preempt_count() != count) {
+        sprintf(msgbuf, "preemption imbalance ");
+        preempt_count_set(count);
+    }
+    // 如果中断被禁用，启用中断并记录相关消息
+    if (irqs_disabled()) {
+        strlcat(msgbuf, "disabled interrupts ", sizeof(msgbuf));
+        local_irq_enable();
+    }
+    // 如果有错误消息，输出警告
+    WARN(msgbuf[0], "initcall %pF returned with %s\n", fn, msgbuf);
 
-	add_latent_entropy();
-	return ret;
+    // 添加潜在的熵
+    add_latent_entropy();
+    return ret;
 }
 
 
