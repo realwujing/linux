@@ -677,7 +677,7 @@ asmlinkage __visible void __init start_kernel(void)
 	uts_ns_init();  // 初始化UTS命名空间
 	buffer_init();  // 初始化缓冲区
 	key_init();  // 初始化密钥
-	security_init();  // 初始化安全性
+	security_init();  // 初始化安全性，如selinux等
 	dbg_late_init();  // 调试模块的延迟初始化
 	vfs_caches_init();  // 初始化VFS缓存
 	pagecache_init();  // 初始化页面缓存
