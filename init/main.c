@@ -927,21 +927,26 @@ static void __init do_initcalls(void)
 }
 
 /*
- * Ok, the machine is now initialized. None of the devices
- * have been touched yet, but the CPU subsystem is up and
- * running, and memory and process management works.
+ * 现在，机器已经初始化。尽管还没有触及设备，但 CPU 子系统已经运行起来，
+ * 内存和进程管理也能正常工作。
  *
- * Now we can finally start doing some real work..
+ * 现在，我们终于可以开始做一些真正的工作了...
  */
 static void __init do_basic_setup(void)
 {
-	cpuset_init_smp();
-	shmem_init();
-	driver_init();
-	init_irq_proc();
-	do_ctors();
-	usermodehelper_enable();
-	do_initcalls();
+	cpuset_init_smp();  // 初始化 CPU 集合（SMP 模式）
+
+	shmem_init();  // 初始化共享内存文件系统
+
+	driver_init();  // 初始化驱动程序子系统
+
+	init_irq_proc();  // 初始化 IRQ 处理过程
+
+	do_ctors();  // 执行构造函数
+
+	usermodehelper_enable();  // 启用用户态帮助程序
+
+	do_initcalls();  // 执行初始化函数调用
 }
 
 static void __init do_pre_smp_initcalls(void)
