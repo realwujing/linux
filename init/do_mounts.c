@@ -533,7 +533,7 @@ void __init mount_root(void)
 }
 
 /*
- * Prepare the namespace - decide what/where to mount, load ramdisks, etc.
+ * 准备命名空间 - 决定要挂载什么和在哪里挂载，加载内存盘等。
  */
 void __init prepare_namespace(void)
 {
@@ -546,21 +546,20 @@ void __init prepare_namespace(void)
 	}
 
 	/*
-	 * wait for the known devices to complete their probing
+	 * 等待已知设备完成探测
 	 *
-	 * Note: this is a potential source of long boot delays.
-	 * For example, it is not atypical to wait 5 seconds here
-	 * for the touchpad of a laptop to initialize.
+	 * 注意：这是潜在的长时间引导延迟的一个来源。
+	 * 例如，等待触摸板初始化可能需要等待5秒。
 	 */
-	wait_for_device_probe();
+	wait_for_device_probe();	// 等待设备探测（probe）完成。设备探测是指内核发现和识别系统中的硬件设备，例如磁盘驱动器、网络接口卡、USB 设备等，这个过程是异步进行的，不同的设备可能在不同的时间完成探测。
 
-	md_run_setup();
+	md_run_setup();	// 初始化和配置 Linux 内核中的软件 RAID (Redundant Array of Independent Disks) 子系统
 
 	if (saved_root_name[0]) {
 		root_device_name = saved_root_name;
 		if (!strncmp(root_device_name, "mtd", 3) ||
 		    !strncmp(root_device_name, "ubi", 3)) {
-			mount_block_root(root_device_name, root_mountflags);
+			mount_block_root(root_device_name, root_mountflags);	// 将根文件系统挂载到指定的设备或路径上
 			goto out;
 		}
 		ROOT_DEV = name_to_dev_t(root_device_name);
@@ -568,14 +567,14 @@ void __init prepare_namespace(void)
 			root_device_name += 5;
 	}
 
-	if (initrd_load())
+	if (initrd_load())	// 加载 initrd 文件系统到内存中，以便在系统启动时将其挂载为根文件系统
 		goto out;
 
-	/* wait for any asynchronous scanning to complete */
+	/*等待任何异步扫描完成*/
 	if ((ROOT_DEV == 0) && root_wait) {
 		printk(KERN_INFO "Waiting for root device %s...\n",
 			saved_root_name);
-		while (driver_probe_done() != 0 ||
+		while (driver_probe_done() != 0 || // 用于检查是否所有设备驱动程序的探测（probing）过程已经完成
 			(ROOT_DEV = name_to_dev_t(saved_root_name)) == 0)
 			msleep(5);
 		async_synchronize_full();
@@ -583,14 +582,15 @@ void __init prepare_namespace(void)
 
 	is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
 
-	if (is_floppy && rd_doload && rd_load_disk(0))
+	if (is_floppy && rd_doload && rd_load_disk(0)) // rd_load_disk 用于加载 RAM 磁盘（initramfs）内容
 		ROOT_DEV = Root_RAM0;
 
-	mount_root();
+	mount_root();	// 卸载初始根文件系统并挂载真正的根文件系统
 out:
+	// 用于挂载 devtmpfs 文件系统，这个文件系统主要用于在 /dev 目录下自动创建设备节点，以便在 Linux 启动过程中正确识别和访问硬件设备
 	devtmpfs_mount("dev");
-	ksys_mount(".", "/", NULL, MS_MOVE, NULL);
-	ksys_chroot(".");
+	ksys_mount(".", "/", NULL, MS_MOVE, NULL);	// 将当前的根文件系统移动到"/"
+	ksys_chroot(".");	// 将进程的根文件系统更改为当前工作目录
 }
 
 static bool is_tmpfs;
