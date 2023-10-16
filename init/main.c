@@ -912,10 +912,9 @@ static void __init do_initcall_level(int level)
 		   __stop___param - __start___param,
 		   level, level,
 		   NULL, &repair_env_string);
-
-	trace_initcall_level(initcall_level_names[level]);
+	trace_initcall_level(initcall_level_names[level]);  // 跟踪初始化级别
 	for (fn = initcall_levels[level]; fn < initcall_levels[level+1]; fn++)
-		do_one_initcall(initcall_from_entry(fn));
+		do_one_initcall(initcall_from_entry(fn));  // 执行一个初始化函数
 }
 
 static void __init do_initcalls(void)
