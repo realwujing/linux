@@ -704,14 +704,20 @@ asmlinkage __visible void __init start_kernel(void)
 	rest_init();  // 启动初始化
 }
 
-/* Call all constructor functions linked into the kernel. */
+/**
+ * do_ctors - 调用内核链接的所有构造函数。
+ *
+ * 调用内核链接的所有构造函数，这些函数在初始化阶段被执行。
+ */
 static void __init do_ctors(void)
 {
 #ifdef CONFIG_CONSTRUCTORS
-	ctor_fn_t *fn = (ctor_fn_t *) __ctors_start;
+    // 获取构造函数数组的起始地址
+    ctor_fn_t *fn = (ctor_fn_t *) __ctors_start;
 
-	for (; fn < (ctor_fn_t *) __ctors_end; fn++)
-		(*fn)();
+    // 遍历构造函数数组，依次执行每个构造函数
+    for (; fn < (ctor_fn_t *) __ctors_end; fn++)
+        (*fn)();
 #endif
 }
 
@@ -949,6 +955,25 @@ static void __init do_basic_setup(void)
 
 	init_irq_proc();  // 初始化 IRQ 处理过程
 
+	/**
+	 * @brief do_ctors 与 do_one_initcall 的区别
+	 * 
+	 * do_ctors 和 do_one_initcall 都是内核初始化过程中的函数，但它们有不同的作用和调用时机：
+	 * do_ctors：
+	 *
+	 * do_ctors 函数用于调用内核链接的所有构造函数，这些构造函数在初始化阶段被执行。
+	 * 构造函数通常用于执行一些在内核启动时需要进行的初始化操作。
+	 * 构造函数的执行是按照它们在构造函数数组中的顺序执行的。
+	 * 这些构造函数主要是用于初始化一些内核子系统或模块，不涉及具体的设备初始化或模块加载等任务。
+	 * 
+	 * do_one_initcall：
+	 *
+	 * do_one_initcall 函数用于执行一个特定的初始化函数，这些初始化函数按照不同的阶段被调用。
+	 * 初始化函数可以包括与设备初始化、模块加载、文件系统挂载等相关的任务。
+	 * 初始化函数的执行顺序是通过不同的宏（如 early_initcall、core_initcall、device_initcall 等）来指定的，这些宏定义了初始化函数在不同初始化阶段的执行顺序。
+	 * 
+	 * 总的来说，do_ctors 主要用于内核的底层初始化，而 do_one_initcall 主要用于执行特定初始化函数，并且这些初始化函数的执行顺序由宏来控制。在内核启动过程中，这两者协同工作，确保了内核的正确初始化。
+	 */
 	do_ctors();  // 执行构造函数
 
 	usermodehelper_enable();  // 启用用户态帮助程序
