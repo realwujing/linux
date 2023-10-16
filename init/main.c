@@ -1025,24 +1025,29 @@ static int __ref kernel_init(void *unused)
 {
 	int ret;
 
-	kernel_init_freeable();
-	/* need to finish all async __init code before freeing the memory */
-	async_synchronize_full();
-	ftrace_free_init_mem();
-	jump_label_invalidate_initmem();
-	free_initmem();
-	mark_readonly();
+	kernel_init_freeable();  // 初始化内核的可释放部分
+
+	/* 需要在释放内存之前完成所有异步 __init 代码 */
+	async_synchronize_full();  // 异步同步操作，确保所有异步初始化代码完成
+
+	ftrace_free_init_mem();  // 释放 ftrace 的初始化内存
+
+	jump_label_invalidate_initmem();  // 使初始化内存中的跳转标签失效
+
+	free_initmem();  // 释放初始化内存
+
+	mark_readonly();  // 标记初始化内存为只读
 
 	/*
-	 * Kernel mappings are now finalized - update the userspace page-table
-	 * to finalize PTI.
+	 * 现在已经确定内核映射 - 更新用户空间页表以完成 PTI。
 	 */
-	pti_finalize();
+	pti_finalize();  // 完成 PTI (Page Table Isolation) 的最终化
 
-	system_state = SYSTEM_RUNNING;
-	numa_default_policy();
+	system_state = SYSTEM_RUNNING;  // 设置系统状态为运行中
 
-	rcu_end_inkernel_boot();
+	numa_default_policy();  // 设置 NUMA (Non-Uniform Memory Access) 默认策略
+
+	rcu_end_inkernel_boot();  // 结束内核引导中的 RCU (Read-Copy Update)
 
 	if (ramdisk_execute_command) {
 		ret = run_init_process(ramdisk_execute_command);
@@ -1053,10 +1058,9 @@ static int __ref kernel_init(void *unused)
 	}
 
 	/*
-	 * We try each of these until one succeeds.
+	 * 我们尝试每个 init 进程，直到一个成功为止。
 	 *
-	 * The Bourne shell can be used instead of init if we are
-	 * trying to recover a really broken machine.
+	 * 如果我们尝试修复一个非常损坏的机器，可以使用 Bourne shell 代替 init。
 	 */
 	if (execute_command) {
 		ret = run_init_process(execute_command);
@@ -1065,6 +1069,7 @@ static int __ref kernel_init(void *unused)
 		panic("Requested init %s failed (error %d).",
 		      execute_command, ret);
 	}
+
 	if (!try_to_run_init_process("/sbin/init") ||
 	    !try_to_run_init_process("/etc/init") ||
 	    !try_to_run_init_process("/bin/init") ||
