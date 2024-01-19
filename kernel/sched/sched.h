@@ -1502,68 +1502,65 @@ extern const u32		sched_prio_to_wmult[40];
 #define RETRY_TASK		((void *)-1UL)
 
 struct sched_class {
-	const struct sched_class *next;
+	const struct sched_class *next;  // 指向下一个调度类的指针
 
-	void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);
-	void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);
-	void (*yield_task)   (struct rq *rq);
-	bool (*yield_to_task)(struct rq *rq, struct task_struct *p, bool preempt);
+	void (*enqueue_task) (struct rq *rq, struct task_struct *p, int flags);  // 将任务加入运行队列的方法
+	void (*dequeue_task) (struct rq *rq, struct task_struct *p, int flags);  // 将任务从运行队列中移除的方法
+	void (*yield_task)   (struct rq *rq);  // 让出 CPU 的方法
+	bool (*yield_to_task)(struct rq *rq, struct task_struct *p, bool preempt);  // 让出 CPU 到指定任务的方法
 
-	void (*check_preempt_curr)(struct rq *rq, struct task_struct *p, int flags);
+	void (*check_preempt_curr)(struct rq *rq, struct task_struct *p, int flags);  // 检查是否抢占当前任务的方法
 
 	/*
-	 * It is the responsibility of the pick_next_task() method that will
-	 * return the next task to call put_prev_task() on the @prev task or
-	 * something equivalent.
-	 *
-	 * May return RETRY_TASK when it finds a higher prio class has runnable
-	 * tasks.
+	 * pick_next_task() 方法的责任是返回下一个任务，并在返回之前调用 put_prev_task() 方法
+	 * 释放前一个任务或者执行等效操作。在找到更高优先级类别有可运行任务时，可能返回 RETRY_TASK。
 	 */
 	struct task_struct * (*pick_next_task)(struct rq *rq,
 					       struct task_struct *prev,
 					       struct rq_flags *rf);
-	void (*put_prev_task)(struct rq *rq, struct task_struct *p);
+	void (*put_prev_task)(struct rq *rq, struct task_struct *p);  // 放回前一个任务的方法
 
 #ifdef CONFIG_SMP
-	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);
-	void (*migrate_task_rq)(struct task_struct *p, int new_cpu);
+	int  (*select_task_rq)(struct task_struct *p, int task_cpu, int sd_flag, int flags);  // 选择任务所在 CPU 的方法
+	void (*migrate_task_rq)(struct task_struct *p, int new_cpu);  // 迁移任务到新 CPU 的方法
 
-	void (*task_woken)(struct rq *this_rq, struct task_struct *task);
+	void (*task_woken)(struct rq *this_rq, struct task_struct *task);  // 任务被唤醒的方法
 
 	void (*set_cpus_allowed)(struct task_struct *p,
-				 const struct cpumask *newmask);
+				 const struct cpumask *newmask);  // 设置任务允许运行的 CPU 集合的方法
 
-	void (*rq_online)(struct rq *rq);
-	void (*rq_offline)(struct rq *rq);
+	void (*rq_online)(struct rq *rq);  // 运行队列上线的方法
+	void (*rq_offline)(struct rq *rq);  // 运行队列下线的方法
 #endif
 
-	void (*set_curr_task)(struct rq *rq);
-	void (*task_tick)(struct rq *rq, struct task_struct *p, int queued);
-	void (*task_fork)(struct task_struct *p);
-	void (*task_dead)(struct task_struct *p);
+	void (*set_curr_task)(struct rq *rq);  // 设置当前任务的方法
+	void (*task_tick)(struct rq *rq, struct task_struct *p, int queued);  // 时钟中断到来时执行的任务的方法
+	void (*task_fork)(struct task_struct *p);  // 任务 fork 时执行的方法
+	void (*task_dead)(struct task_struct *p);  // 任务死亡时执行的方法
 
 	/*
-	 * The switched_from() call is allowed to drop rq->lock, therefore we
-	 * cannot assume the switched_from/switched_to pair is serliazed by
-	 * rq->lock. They are however serialized by p->pi_lock.
+	 * switched_from() 和 switched_to() 方法允许在 rq->lock 被释放的情况下调用，
+	 * 因此不能假设 switched_from/switched_to 对通过 rq->lock 序列化。它们实际上
+	 * 通过 p->pi_lock 序列化。
 	 */
-	void (*switched_from)(struct rq *this_rq, struct task_struct *task);
-	void (*switched_to)  (struct rq *this_rq, struct task_struct *task);
+	void (*switched_from)(struct rq *this_rq, struct task_struct *task);  // 切换出任务时执行的方法
+	void (*switched_to)  (struct rq *this_rq, struct task_struct *task);  // 切换到任务时执行的方法
 	void (*prio_changed) (struct rq *this_rq, struct task_struct *task,
-			      int oldprio);
+			      int oldprio);  // 任务优先级发生改变时执行的方法
 
 	unsigned int (*get_rr_interval)(struct rq *rq,
-					struct task_struct *task);
+					struct task_struct *task);  // 获取时间片的方法
 
-	void (*update_curr)(struct rq *rq);
+	void (*update_curr)(struct rq *rq);  // 更新当前任务的方法
 
 #define TASK_SET_GROUP		0
 #define TASK_MOVE_GROUP		1
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
-	void (*task_change_group)(struct task_struct *p, int type);
+	void (*task_change_group)(struct task_struct *p, int type);  // 任务所在组发生改变时执行的方法
 #endif
 };
+
 
 static inline void put_prev_task(struct rq *rq, struct task_struct *prev)
 {
