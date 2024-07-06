@@ -1785,7 +1785,10 @@ int sched_init_domains(const struct cpumask *cpu_map)
 	doms_cur = alloc_sched_domains(ndoms_cur);  // 分配调度域内存空间
 	if (!doms_cur)
 		doms_cur = &fallback_doms;  // 如果分配失败，使用回退调度域
-	cpumask_and(doms_cur[0], cpu_map, housekeeping_cpumask(HK_FLAG_DOMAIN));  // 将CPU掩码与域内核心掩码按位与，排除隔离的CPU
+	cpumask_and(
+		doms_cur[0], cpu_map,
+		housekeeping_cpumask(
+			HK_FLAG_DOMAIN)); // 将CPU掩码与域内核心掩码按位与，排除隔离的CPU，HK_FLAG_DOMAIN中保存的是参与调度的CPU核心
 	err = build_sched_domains(doms_cur[0], NULL);  // 构建调度域
 	register_sched_domain_sysctl();  // 注册调度域的sysctl接口
 
