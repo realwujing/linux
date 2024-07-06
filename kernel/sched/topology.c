@@ -1768,26 +1768,26 @@ void free_sched_domains(cpumask_var_t doms[], unsigned int ndoms)
 }
 
 /*
- * Set up scheduler domains and groups. Callers must hold the hotplug lock.
+ * Set up scheduler domains and groups. Callers must hold the hotplug lock. // 设置调度域和组。调用者必须持有热插拔锁。
  * For now this just excludes isolated CPUs, but could be used to
- * exclude other special cases in the future.
+ * exclude other special cases in the future. // 目前仅排除隔离的CPU，但将来也可以用于排除其他特殊情况。
  */
 int sched_init_domains(const struct cpumask *cpu_map)
 {
 	int err;
 
-	zalloc_cpumask_var(&sched_domains_tmpmask, GFP_KERNEL);
-	zalloc_cpumask_var(&sched_domains_tmpmask2, GFP_KERNEL);
-	zalloc_cpumask_var(&fallback_doms, GFP_KERNEL);
+	zalloc_cpumask_var(&sched_domains_tmpmask, GFP_KERNEL);  // 分配临时CPU掩码变量
+	zalloc_cpumask_var(&sched_domains_tmpmask2, GFP_KERNEL);  // 分配第二个临时CPU掩码变量
+	zalloc_cpumask_var(&fallback_doms, GFP_KERNEL);  // 分配回退调度域变量
 
-	arch_update_cpu_topology();
-	ndoms_cur = 1;
-	doms_cur = alloc_sched_domains(ndoms_cur);
+	arch_update_cpu_topology();  // 更新CPU拓扑结构
+	ndoms_cur = 1;  // 当前调度域数量为1
+	doms_cur = alloc_sched_domains(ndoms_cur);  // 分配调度域内存空间
 	if (!doms_cur)
-		doms_cur = &fallback_doms;
-	cpumask_and(doms_cur[0], cpu_map, housekeeping_cpumask(HK_FLAG_DOMAIN));
-	err = build_sched_domains(doms_cur[0], NULL);
-	register_sched_domain_sysctl();
+		doms_cur = &fallback_doms;  // 如果分配失败，使用回退调度域
+	cpumask_and(doms_cur[0], cpu_map, housekeeping_cpumask(HK_FLAG_DOMAIN));  // 将CPU掩码与域内核心掩码按位与，排除隔离的CPU
+	err = build_sched_domains(doms_cur[0], NULL);  // 构建调度域
+	register_sched_domain_sysctl();  // 注册调度域的sysctl接口
 
 	return err;
 }
