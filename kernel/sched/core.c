@@ -5849,26 +5849,25 @@ int sched_cpu_dying(unsigned int cpu)
 
 void __init sched_init_smp(void)
 {
-	sched_init_numa();
+	sched_init_numa();  // 初始化NUMA相关
 
 	/*
-	 * There's no userspace yet to cause hotplug operations; hence all the
-	 * CPU masks are stable and all blatant races in the below code cannot
-	 * happen.
+	 * 目前还没有用户空间来触发热插拔操作；
+	 * 因此所有CPU掩码是稳定的，并且以下代码中的明显竞争是不可能发生的。
 	 */
-	mutex_lock(&sched_domains_mutex);
-	sched_init_domains(cpu_active_mask);
-	mutex_unlock(&sched_domains_mutex);
+	mutex_lock(&sched_domains_mutex);  // 获取调度域互斥锁
+	sched_init_domains(cpu_active_mask);  // 初始化调度域，使用活跃CPU掩码
+	mutex_unlock(&sched_domains_mutex);  // 释放调度域互斥锁
 
-	/* Move init over to a non-isolated CPU */
+	/* 将初始化工作移动到非隔离CPU上 */
 	if (set_cpus_allowed_ptr(current, housekeeping_cpumask(HK_FLAG_DOMAIN)) < 0)
-		BUG();
-	sched_init_granularity();
+		BUG();  // 如果设置CPU掩码失败，触发BUG
+	sched_init_granularity();  // 初始化调度粒度
 
-	init_sched_rt_class();
-	init_sched_dl_class();
+	init_sched_rt_class();  // 初始化实时调度类
+	init_sched_dl_class();  // 初始化周期调度类
 
-	sched_smp_initialized = true;
+	sched_smp_initialized = true;  // 标记SMP调度已初始化完成
 }
 
 static int __init migration_init(void)
