@@ -64,53 +64,53 @@ void __init housekeeping_init(void)
 
 static int __init housekeeping_setup(char *str, enum hk_flags flags)
 {
-	cpumask_var_t non_housekeeping_mask;
-	int err;
+	cpumask_var_t non_housekeeping_mask; // 定义非housekeeping的CPU掩码变量
+	int err; // 定义错误码变量
 
-	alloc_bootmem_cpumask_var(&non_housekeeping_mask);
-	err = cpulist_parse(str, non_housekeeping_mask);
-	if (err < 0 || cpumask_last(non_housekeeping_mask) >= nr_cpu_ids) {
-		pr_warn("Housekeeping: nohz_full= or isolcpus= incorrect CPU range\n");
-		free_bootmem_cpumask_var(non_housekeeping_mask);
-		return 0;
+	alloc_bootmem_cpumask_var(&non_housekeeping_mask); // 分配非housekeeping的CPU掩码变量的内存
+	err = cpulist_parse(str, non_housekeeping_mask); // 解析CPU列表字符串并填充非housekeeping的CPU掩码
+	if (err < 0 || cpumask_last(non_housekeeping_mask) >= nr_cpu_ids) { // 如果解析出错或CPU范围超出限制
+		pr_warn("Housekeeping: nohz_full= or isolcpus= incorrect CPU range\n"); // 打印警告信息
+		free_bootmem_cpumask_var(non_housekeeping_mask); // 释放非housekeeping的CPU掩码变量的内存
+		return 0; // 返回0表示失败
 	}
 
-	if (!housekeeping_flags) {
-		alloc_bootmem_cpumask_var(&housekeeping_mask);
+	if (!housekeeping_flags) { // 如果housekeeping标志未设置
+		alloc_bootmem_cpumask_var(&housekeeping_mask); // 分配housekeeping的CPU掩码变量的内存
 		cpumask_andnot(housekeeping_mask,
-			       cpu_possible_mask, non_housekeeping_mask);
-		if (cpumask_empty(housekeeping_mask))
-			cpumask_set_cpu(smp_processor_id(), housekeeping_mask);
-	} else {
-		cpumask_var_t tmp;
+				   cpu_possible_mask, non_housekeeping_mask); // 计算housekeeping的CPU掩码
+		if (cpumask_empty(housekeeping_mask)) // 如果housekeeping的CPU掩码为空
+			cpumask_set_cpu(smp_processor_id(), housekeeping_mask); // 设置当前CPU为housekeeping CPU
+	} else { // 如果housekeeping标志已设置
+		cpumask_var_t tmp; // 定义临时CPU掩码变量
 
-		alloc_bootmem_cpumask_var(&tmp);
-		cpumask_andnot(tmp, cpu_possible_mask, non_housekeeping_mask);
-		if (!cpumask_equal(tmp, housekeeping_mask)) {
-			pr_warn("Housekeeping: nohz_full= must match isolcpus=\n");
-			free_bootmem_cpumask_var(tmp);
-			free_bootmem_cpumask_var(non_housekeeping_mask);
-			return 0;
+		alloc_bootmem_cpumask_var(&tmp); // 分配临时CPU掩码变量的内存
+		cpumask_andnot(tmp, cpu_possible_mask, non_housekeeping_mask); // 计算临时CPU掩码
+		if (!cpumask_equal(tmp, housekeeping_mask)) { // 如果临时CPU掩码与housekeeping的CPU掩码不相等
+			pr_warn("Housekeeping: nohz_full= must match isolcpus=\n"); // 打印警告信息
+			free_bootmem_cpumask_var(tmp); // 释放临时CPU掩码变量的内存
+			free_bootmem_cpumask_var(non_housekeeping_mask); // 释放非housekeeping的CPU掩码变量的内存
+			return 0; // 返回0表示失败
 		}
-		free_bootmem_cpumask_var(tmp);
+		free_bootmem_cpumask_var(tmp); // 释放临时CPU掩码变量的内存
 	}
 
-	if ((flags & HK_FLAG_TICK) && !(housekeeping_flags & HK_FLAG_TICK)) {
-		if (IS_ENABLED(CONFIG_NO_HZ_FULL)) {
-			tick_nohz_full_setup(non_housekeeping_mask);
-		} else {
+	if ((flags & HK_FLAG_TICK) && !(housekeeping_flags & HK_FLAG_TICK)) { // 如果设置了HK_FLAG_TICK标志但housekeeping标志未设置
+		if (IS_ENABLED(CONFIG_NO_HZ_FULL)) { // 如果启用了CONFIG_NO_HZ_FULL配置
+			tick_nohz_full_setup(non_housekeeping_mask); // 设置tick nohz full
+		} else { // 如果未启用CONFIG_NO_HZ_FULL配置
 			pr_warn("Housekeeping: nohz unsupported."
-				" Build with CONFIG_NO_HZ_FULL\n");
-			free_bootmem_cpumask_var(non_housekeeping_mask);
-			return 0;
+				" Build with CONFIG_NO_HZ_FULL\n"); // 打印警告信息
+			free_bootmem_cpumask_var(non_housekeeping_mask); // 释放非housekeeping的CPU掩码变量的内存
+			return 0; // 返回0表示失败
 		}
 	}
 
-	housekeeping_flags |= flags;
+	housekeeping_flags |= flags; // 设置housekeeping标志
 
-	free_bootmem_cpumask_var(non_housekeeping_mask);
+	free_bootmem_cpumask_var(non_housekeeping_mask); // 释放非housekeeping的CPU掩码变量的内存
 
-	return 1;
+	return 1; // 返回1表示成功
 }
 
 static int __init housekeeping_nohz_full_setup(char *str)
